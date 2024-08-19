@@ -1,0 +1,293 @@
+# Define entities and relationships
+entities = {
+    "patient": {
+        "type": "individual",
+        "attributes": {
+            "age": {"type": "integer", "range": [20, 80]},
+            "gender": {"type": "categorical", "values": ["male", "female"]},
+            "height": {"type": "integer", "unit": "cm"},
+            "weight": {"type": "integer", "unit": "kg"},
+            "blood_pressure": {"type": "integer", "unit": "mmHg"},
+            "cholesterol": {"type": "integer", "unit": "mg/dL"},
+            "glucose": {"type": "integer", "unit": "mg/dL"},
+            "smoking": {"type": "categorical", "values": ["current", "former", "never"]},
+            "alcohol": {"type": "categorical", "values": ["yes", "no"]},
+            "physical_activity": {"type": "integer", "unit": "minutes"}
+        }
+    },
+    "cardiovascular_disease": {
+        "type": "medical condition",
+        "categories": ["present", "absent"]
+    },
+    "risk_factor": {
+        "type": "medical condition/habit",
+        "categorical_examples": ["smoking", "alcohol", "physical_activity"],
+        "threshold_examples": {
+            "high_blood_pressure": {"threshold": 140},
+            "high_cholesterol": {"threshold": 200},
+            "high_glucose": {"threshold": 126}
+        }
+    }
+}
+
+relationships = {
+    "patient": {
+        "has": ["risk_factor"],
+        "can_have": ["cardiovascular_disease"]
+    },
+    "risk_factor": {
+        "increases_risk_of": ["cardiovascular_disease"],
+        "related_to": {"high_blood_pressure": ["high_cholesterol", "high_glucose"]}
+    }
+}
+# Function to check if a patient is at risk of cardiovascular disease
+def check_cardiovascular_disease_risk(patient_data):
+    risk_factors = patient_data["risk_factor"]
+    risk_explanation = []  # List to store explanations for each risk factor
+
+    # Checking for high blood pressure
+    if "high_blood_pressure" in risk_factors:
+        if patient_data["blood_pressure"] >= 140:
+            risk_explanation.append("High blood pressure (>=140 mmHg)")
+
+    # Checking for high cholesterol
+    if "high_cholesterol" in risk_factors:
+        if patient_data["cholesterol"] >= 200:
+            risk_explanation.append("High cholesterol (>=200 mg/dL)")
+
+    # Checking for high glucose
+    if "high_glucose" in risk_factors:
+        if patient_data["glucose"] >= 126:
+            risk_explanation.append("High glucose (>=126 mg/dL)")
+
+    # Checking for smoking habit
+    if patient_data["smoking"] == "current":
+        risk_explanation.append("Current smoking")
+
+    # Checking for alcohol consumption
+    if patient_data["alcohol"] == "yes":
+        risk_explanation.append("Alcohol consumption")
+
+    # Checking for low physical activity
+    if patient_data["physical_activity"] < 30:  # Assuming less than 30 minutes as low physical activity
+        risk_explanation.append("Low physical activity (<30 minutes/day)")
+
+    # If there are any risk factors, the patient is considered at risk
+    if risk_explanation:
+        print("The patient is at risk of cardiovascular disease.")
+        print("Risk Factors:")
+        for factor in risk_explanation:
+            print("- " + factor)
+    else:
+        print("The patient is not at risk of cardiovascular disease.")
+
+# Sample patient data
+sample_patient = {
+    "age": 55,
+    "gender": "male",
+    "height": 175,
+    "weight": 80,
+    "blood_pressure": 150,
+    "cholesterol": 220,
+    "glucose": 130,
+    "smoking": "current",
+    "alcohol": "yes",
+    "physical_activity": 20,  # Minutes of physical activity per day
+    "risk_factor": ["high_blood_pressure", "high_cholesterol", "high_glucose", "smoking", "alcohol"]
+}
+
+# Check if the sample patient is at risk of cardiovascular disease
+check_cardiovascular_disease_risk(sample_patient)
+from google.colab import drive
+drive.mount('/content/drive')
+import os
+os.chdir("/content/drive/My Drive/CVD_datasets")
+!ls
+#importing required libraries
+
+import os
+import plotly.graph_objects as go
+import pandas as pd
+import numpy as np
+from pandas.plotting import scatter_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+import statsmodels
+import missingno as msno
+import plotly.graph_objects as go
+import plotly.express as px
+import torch
+import sklearn
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+from tqdm import tqdm
+import torch.functional as F
+from xgboost import XGBClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn import tree
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, auc
+data = pd.read_csv("cardio_train.csv")
+data.head()
+data.shape
+data.columns
+data.drop('id', inplace=True, axis=1)
+data
+data.describe()
+data.nunique()
+data.dtypes
+data['gender'] = data.gender.replace({1: "Male", 2: "Female"})
+data['cholesterol'] = data.cholesterol.replace({1: "normal", 2:"above normal", 3: "well above normal"})
+data['gluc'] = data.gluc.replace({1: "normal", 2:"above normal", 3: "well above normal"})
+data['smoke'] = data.smoke.replace({1: "Yes", 0: "No"})
+data['alco'] = data.alco.replace({1: "Yes", 0: "No"})
+data['active'] = data.active.replace({1: "Yes", 0: "No"})
+data['cardio'] = data.cardio.replace({1: "Present", 0: "Absent"})
+# define continuous variable & plot
+continous_features = ['age','height','weight','ap_hi', 'ap_lo']
+def outliers(df_out, drop = False):
+    for each_feature in df_out.columns:
+        feature_data = df_out[each_feature]
+        Q1 = np.percentile(feature_data, 25.) # 25th percentile of the data of the given feature
+        Q3 = np.percentile(feature_data, 75.) # 75th percentile of the data of the given feature
+        IQR = Q3-Q1 #Interquartile Range
+        outlier_step = IQR * 1.5 #That's we were talking about above
+        outliers = feature_data[~((feature_data >= Q1 - outlier_step) & (feature_data <= Q3 + outlier_step))].index.tolist()
+        if not drop:
+            print('For the feature {}, No of Outliers is {}'.format(each_feature, len(outliers)))
+        if drop:
+            data.drop(outliers, inplace = True, errors = 'ignore')
+            print('Outliers from {} feature removed'.format(each_feature))
+
+outliers(data[continous_features])
+outliers(data[continous_features], drop = True)
+print(data.cardio.value_counts())
+
+fig, ax = plt.subplots(figsize=(5,4))
+name = ["Disease", "No_Disease"]
+ax = data.cardio.value_counts().plot(kind='bar')
+ax.set_title("Heart Disease Classification", fontsize = 13)
+ax.set_xticklabels (name, rotation = 0)
+
+# To calculate the percentage
+totals = []
+for i in ax.patches:
+    totals.append(i.get_height())
+total = sum(totals)
+for i in ax.patches:
+    ax.text(i.get_x()+.09, i.get_height()-50, \
+            str(round((i.get_height()/total)*100, 2))+'%', fontsize=14,
+                color='white', weight = 'bold')
+
+plt.tight_layout()
+
+# print(df.age.value_counts())
+data['age'].hist().plot(kind='bar')
+plt.title('Age Distribution')
+# Analyze distribution in age in range 500
+print(data.age.value_counts()[:20])
+plt.rcParams['figure.figsize'] = [18, 4]
+sns.barplot(x=data.age.value_counts()[:20].index, y = data.age.value_counts()[:20].values,palette='Set2')
+plt.xlabel('Age in days')
+plt.ylabel('Age distribution')
+# to know yougest and oldest patient
+print("Age in years (approx.):")
+print("Minimum age: ", min(data.age)/365)
+print("Maximum age: ",max(data.age)/365)
+print("Mean age: ",data.age.mean()/365)
+fig, ax = plt.subplots(figsize=(8,5))
+name = data['gender']
+ax = sns.countplot(x='gender', hue='cardio', data=data, palette='Set2')
+ax.set_title("Gender Distribution according to Target Variable", fontsize = 13)
+totals = []
+for i in ax.patches:
+    totals.append(i.get_height())
+total = sum(totals)
+for i in ax.patches:
+    ax.text(i.get_x()+.05, i.get_height()-15,
+            str(round((i.get_height()/total)*100, 2))+'%', fontsize=14,
+                color='white', weight = 'bold')
+plt.tight_layout()
+fig, ax = plt.subplots(figsize=(10,5))
+name = data['cholesterol']
+ax = sns.countplot(x='cholesterol', hue='cardio', data=data, palette='Set3')
+ax.set_title("Choslesterol Distribution according to Target", fontsize = 13)
+#ax.set_xticklabels (name, rotation = 0)
+
+totals = []
+for i in ax.patches:
+    totals.append(i.get_height())
+total = sum(totals)
+for i in ax.patches:
+    ax.text(i.get_x()+.03, i.get_height()-5,
+            str(round((i.get_height()/total)*100, 2))+'%', fontsize=14,
+                color='white', weight = 'bold')
+plt.tight_layout()
+fig, ax = plt.subplots(figsize=(10,5))
+name = data['gluc']
+ax = sns.countplot(x='gluc', hue='cardio', data=data, palette='Set1')
+ax.set_title("Glucose Distribution according to Target", fontsize = 13)
+#ax.set_xticklabels (name, rotation = 0)
+
+totals = []
+for i in ax.patches:
+    totals.append(i.get_height())
+total = sum(totals)
+for i in ax.patches:
+    ax.text(i.get_x()+.03, i.get_height()-5,
+            str(round((i.get_height()/total)*100, 2))+'%', fontsize=14,
+                color='white', weight = 'bold')
+plt.tight_layout()
+# height
+data['height'].hist().plot(kind='bar')
+plt.title('Height Distribution')
+# weight
+data['weight'].hist().plot(kind='bar')
+plt.title('Weight Distribution')
+df = pd.read_csv("cardio_train.csv")
+df.dtypes
+sns.set(style="white")
+plt.rcParams['figure.figsize'] = (15, 10)
+sns.heatmap(df.corr(), annot = True, linewidths=.5, cmap="Blues")
+plt.title('Correlation Between Variables', fontsize = 13)
+plt.show()
+scaled_values = {}
+#scaling
+for x in df.columns:
+
+    maxval = max(df[x])
+    scaled_values[x] = maxval
+    df[x] = df[x]/maxval
+df.head()
+# starting from index 1 to remove index column
+X, y = df[df.columns[1:]].values[:,:-1], df[df.columns[1:]].values[:,-1]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.35, random_state=1)
+#creating the model object
+model = XGBClassifier(use_label_encoder=False, eval_metric='mlogloss',booster ="gbtree",max_depth =6)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+format(accuracy, ".2f")
+ps = precision_score(y_pred,y_test)
+rs = recall_score(y_pred, y_test)
+f1s = f1_score(y_pred,y_test)
+print(f"Precision {ps}\nRecall {rs}\nF1 Score {f1s}")
+conf_matrix = confusion_matrix(y_true=y_test, y_pred=y_pred)
+
+fig, ax = plt.subplots(figsize=(5, 5))
+ax.matshow(conf_matrix, cmap=plt.cm.Oranges, alpha=0.3)
+for i in range(conf_matrix.shape[0]):
+    for j in range(conf_matrix.shape[1]):
+        ax.text(x=j, y=i,s=conf_matrix[i, j], va='center', ha='center', size='xx-large')
+plt.xlabel('Predictions', fontsize=18)
+plt.ylabel('Actuals', fontsize=18)
+plt.title('Confusion Matrix', fontsize=18)
+plt.show()
+feature_importances = model.feature_importances_
+the above give code is for cardiovascular_KB.ipynb.explain precisely may be what is doing what

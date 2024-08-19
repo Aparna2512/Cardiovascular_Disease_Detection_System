@@ -1,0 +1,59 @@
+// Create nodes for entities and attributes
+CREATE (:Entity {name: 'patient'}),
+       (:Attribute {name: 'age', type: 'integer', unit: 'years'}),
+       (:Attribute {name: 'gender', type: 'categorical', values: ['male', 'female']}),
+       (:Attribute {name: 'height', type: 'integer', unit: 'cm'}),
+       (:Attribute {name: 'weight', type: 'integer', unit: 'kg'}),
+       (:Attribute {name: 'blood_pressure', type: 'integer', unit: 'mmHg'}),
+       (:Attribute {name: 'cholesterol', type: 'integer', unit: 'mg/dL'}),
+       (:Attribute {name: 'glucose', type: 'integer', unit: 'mg/dL'}),
+       (:Attribute {name: 'smoking', type: 'categorical', values: ['current', 'former', 'never']}),
+       (:Attribute {name: 'alcohol', type: 'categorical', values: ['yes', 'no']}),
+       (:Attribute {name: 'physical_activity', type: 'integer', unit: 'minutes'}),
+       (:Entity {name: 'cardiovascular_disease'}),
+       (:Entity {name: 'risk_factor'})
+
+// Create relationships
+CREATE (:Relationship {name: 'has'})-[:RELATES_TO]->(:Attribute {name: 'age'}),
+       (:Relationship {name: 'has'})-[:RELATES_TO]->(:Attribute {name: 'gender'}),
+       (:Relationship {name: 'has'})-[:RELATES_TO]->(:Attribute {name: 'height'}),
+       (:Relationship {name: 'has'})-[:RELATES_TO]->(:Attribute {name: 'weight'}),
+       (:Relationship {name: 'has'})-[:RELATES_TO]->(:Attribute {name: 'blood_pressure'}),
+       (:Relationship {name: 'has'})-[:RELATES_TO]->(:Attribute {name: 'cholesterol'}),
+       (:Relationship {name: 'has'})-[:RELATES_TO]->(:Attribute {name: 'glucose'}),
+       (:Relationship {name: 'has'})-[:RELATES_TO]->(:Attribute {name: 'smoking'}),
+       (:Relationship {name: 'has'})-[:RELATES_TO]->(:Attribute {name: 'alcohol'}),
+       (:Relationship {name: 'has'})-[:RELATES_TO]->(:Attribute {name: 'physical_activity'}),
+       (:Relationship {name: 'can_have'})-[:RELATES_TO]->(:Entity {name: 'cardiovascular_disease'}),
+       (:Relationship {name: 'has'})-[:RELATES_TO]->(:Entity {name: 'risk_factor'})
+
+
+
+
+CREATE (:Patient {id: 2, 
+                  age: 35,
+                  gender: 'female',
+                  height: 160,
+                  weight: 65,
+                  blood_pressure: 130,
+                  cholesterol: 190,
+                  glucose: 120,
+                  smoking: 'never',
+                  alcohol: 'no',
+                  physical_activity: 45})
+
+
+CREATE (:Patient {id: 3, 
+                  age: 50,
+                  gender: 'male',
+                  height: 180,
+                  weight: 75,
+                  blood_pressure: 140,
+                  cholesterol: 210,
+                  glucose: 140,
+                  smoking: 'former',
+                  alcohol: 'yes',
+                  physical_activity: 30})
+
+MATCH (p:Patient)
+RETURN p
